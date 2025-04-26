@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>AI Infographic</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="icons-svg.js"></script>
+  <link rel="stylesheet" href="./style.css" />
+  <script src="./info.js"></script>
+  <script src="./text.js"></script>
+  <script src="./draw-infographic.js"></script>
+</head>
+<body>
+
+<div id="mainWrapper">
+  <!-- Left text container -->
+  <div id="textContent">
+  </div>
+
+  <!-- Right infographic container -->
+  <div id="infographicWrapper">
+    <div id="myInfographic"></div>
+    <!-- Control button for small screens -->
+    <div id="infographicControl">
+      <button id="toggleInfographic">
+        <i class="fa-solid fa-expand"></i>
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+</script>
+
+
+<script>
+  // Toggle control for small screens
+  const toggleButton = document.getElementById("toggleInfographic");
+  const infographicWrapper = document.getElementById("infographicWrapper");
+
+  // Initially hide the infographic on small screens
+  function checkScreenWidth() {
+    if(window.innerWidth < 900) {
+      infographicWrapper.classList.add("mobile-folded");
+    } else {
+      infographicWrapper.classList.remove("mobile-folded", "expanded");
+    }
+  }
+  checkScreenWidth();
+  window.addEventListener("resize", checkScreenWidth);
+
+  let expanded = false;
+  toggleButton.addEventListener("click", () => {
+    expanded = !expanded;
+    if(expanded) {
+      infographicWrapper.classList.add("expanded");
+      // Change control icon to close on expanded view
+      toggleButton.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+    } else {
+      infographicWrapper.classList.remove("expanded");
+      // Change control icon to expand on folded view
+      toggleButton.innerHTML = '<i class="fa-solid fa-expand"></i>';
+    }
+  });
+</script>
+
+<script>
+/*
+  Our plan is as follows:
+  1. We have textData constant from text.js
+  it has the following structure: "date" -> html. We want to fill it into
+  the textContent div.
+  2. We have infoData constant from info.js
+  it has the following structure: "date" -> data. Upon scrolling of corresponding
+  date in textContent div we want to update the infographic. via updateInfographic(infoData[date])
+  3. We have drawInfographic function that draws the infographic for the first time.
+*/
+
+  // lets start with drawing first infographic
+  drawInfographic("myInfographic", infoData["May 2025"]);
+
+  var mode = 1; // default mode is 1
+  // lets check if "slowdown" is in the url
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.has("slowdown")) {
+    mode = 3; // slowdown mode
+  } else if (urlParams.has("race")) {
+    mode = 2;
+  }
+
+  // lets fill the textContent div with the textData
+  const textContent = document.getElementById("textContent");
+  const textKeys = Object.keys(textData);
+  const textValues = Object.values(textData);
+  const textHtml = textKeys.map((key, index) => {
+    // inside textValues[index] there are <br> tags
+    // we want split by <br> and then wrap all items to <p> </p>
+    // and then join them with <br>
+    const paragraphs = textValues[index].split("<br>").map((item) => `<p>${item}</p>`).join("<br>");
+    // we have 3 modes of text showing:
+    // 1. show only elements where key starts with month (generally any symbol except "&" and "$")
+    // 2. race mode - show all elements which starts with month + those which starts with "$"
+    // 3. slowdown mode - show all elements which starts with month + those which starts with "&"
+    // default mode is 1.
+    display = "block";
+    if (mode === 1) {
+      if (key.match(/^[&$]/)) {
+        display = "none";
+      }
+    } else if (mode === 2) {
+      if (key.match(/^[&]/)) {
+        display = "none";
+      }
+    } else if (mode === 3) {
+      if (key.match(/^[\$]/)) {
+        display = "none";
+      }
+    }
+    html = `<div class="textItem" id="${key}" style="display: ${display}">${paragraphs}</div>`;
+    return html;
+  }).join("");
+  textContent.innerHTML = textHtml;
+
+  var textUpdateDisplay = function(mode) {
+    const textItems = document.querySelectorAll(".textItem");
+    textItems.forEach(item => {
+      const key = item.id;
+      let display = "block";
+      if (mode === 1) {
+        if (key.match(/^[&$]/)) {
+          display = "none";
+        }
+      } else if (mode === 2) {
+        if (key.match(/^[&]/)) {
+          display = "none";
+        }
+      } else if (mode === 3) {
+        if (key.match(/^[\$]/)) {
+          display = "none";
+        }
+      }
+      item.style.display = display;
+    });
+  };
+
+  // lets two buttons to change the mode, left "green" - slowdown mode
+  // and right "red" - race mode
+  const leftButton = document.createElement("button");
+  leftButton.id = "slowdownButton";
+  leftButton.innerHTML = labels['Slowdown'];
+  leftButton.addEventListener("click", () => {
+    mode = 3; // slowdown mode
+    textUpdateDisplay(mode);
+    // we also want to change the url to have "?slowdown" in it
+    const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + "?slowdown";
+    window.history.pushState({ path: newUrl }, '', newUrl);
+    //we also want to scroll to "&Oct 2027"
+    const targetElement = document.getElementById("&Oct 2027");
+    if (targetElement) {
+      targetElement.scrollIntoView({ behavior: 'smooth' });
+    }
+  });
+  const rightButton = document.createElement("button");
+  rightButton.innerHTML = labels['Race'];
+  rightButton.id = "raceButton";
+  rightButton.addEventListener("click", () => {
+    mode = 2; // race mode
+    textUpdateDisplay(mode);
+    // we also want to change the url
+    const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + "?race";
+    window.history.pushState({ path: newUrl }, '', newUrl);
+    //we also want to scroll to "$Oct 2027"
+    const targetElement = document.getElementById("$Oct 2027");
+    if (targetElement) {
+      targetElement.scrollIntoView({ behavior: 'smooth' });
+    }
+  });
+  // we want to put it to the div, and then this div to the textContent
+  const buttonDiv = document.createElement("div");
+  buttonDiv.className = "textButtons";
+  // lets add centered text to buttonDiv
+  const buttonText = document.createElement("span");
+  buttonText.className = "textButtonText";
+  buttonText.innerHTML = labels["Change mode"];
+  //buttonText should be cenetered and on separate line
+  buttonText.style.display = "block";
+  buttonText.style.textAlign = "center";
+  buttonText.style.marginBottom = "10px";
+  buttonDiv.appendChild(buttonText);
+  buttonDiv.appendChild(leftButton);
+  buttonDiv.appendChild(rightButton);
+  textContent.appendChild(buttonDiv);
+
+
+  // there are "footnotes" in the textData
+  // they looks like <sup class="footnote" data-note="s56">56</sup>
+  // we also has `references` constant in text.js that is a map "<number>" -> "<text>"
+  // we want to add event to all footnotes, so if they are hovered
+  // a hint (in the form of tooltip) will be shown, it will be dissapear after 3 seconds
+  // of moving mouse out of the footnote. if mouse is over the tooltip it should not dissapear
+  // and if mouse is over the footnote it should not dissapear too
+  const footnotes = document.querySelectorAll(".footnote");
+  var lastShownTooltip = null;
+  footnotes.forEach(footnote => {
+  const note = footnote.dataset.note;
+
+  // we want to colorize the footnote. The rules are the following:
+  // if data-note is just number (e.g. 56) we want to add class "main"
+  // if data-note is number with "s" in the beginning (e.g. s56) we want to add class "slowdown"
+  // if data-note is number with "r" in the beginning (e.g. r56) we want to add class "race"
+  // if data-note is note an integer we want to add class "translater"
+  // we also want to put the same class to the tooltip, so lets detect and put it into variable
+  let tooltipClass = "";
+  if (note.match(/^\d+$/)) {
+    tooltipClass = "main";
+  } else if (note.match(/^s\d+$/)) {
+    tooltipClass = "slowdown";
+  } else if (note.match(/^r\d+$/)) {
+    tooltipClass = "race";
+  } else if (note.match(/^\d+\.\d+$/)) {
+    tooltipClass = "translater";
+  } else {
+    tooltipClass = "main"; // default class
+  }
+
+    
+  footnote.classList.add(tooltipClass);
+  const tooltip = document.createElement("div");
+  tooltip.classList.add("footnote-tooltip");
+  tooltip.classList.add(tooltipClass);
+  //tooltip.className = "footnote-tooltip";
+  // first we want to put into tooltip additional div with solid border and text #<index>
+  // it should has 2 lines height and be in top left corner of the tooltip
+  // text of tooltip should wrap it.
+  const indexDiv = document.createElement("span");
+  indexDiv.className = "footnote-index-border";
+  indexDiv.innerHTML = `#${note}`;
+  //indexDiv.style.top = "10";
+  tooltip.appendChild(indexDiv);
+  tooltip.innerHTML = `<p>${tooltip.innerHTML} 
+                          ${references[note]}</p>`;
+  tooltip.style.display = "none"; // Ensure it's initially hidden
+  document.body.appendChild(tooltip);
+  if(!references[note]) {
+    console.error(`No reference found for note: ${note}`);
+  }
+
+  footnote.addEventListener("mouseover", (event) => {
+  // First make tooltip visible but positioned off-screen to measure it
+  tooltip.style.display = "block";
+  tooltip.style.visibility = "hidden";
+  tooltip.style.position = "absolute";
+  tooltip.style.left = "-9999px";
+  tooltip.style.top = "-9999px";
+  
+  // Force browser to calculate dimensions
+  const tooltipWidth = tooltip.offsetWidth;
+  const tooltipHeight = tooltip.offsetHeight;
+  
+  // Now position relative to the footnote
+  const rect = event.target.getBoundingClientRect();
+  
+  // Calculate position (accounting for scroll position)
+  const tooltipX = Math.max(0, rect.left + window.scrollX + (rect.width - tooltipWidth) / 2);
+  const tooltipY = Math.max(0, rect.top + window.scrollY - tooltipHeight - 10);
+  
+  // Apply final position and make visible
+  tooltip.style.left = `${tooltipX}px`;
+  tooltip.style.top = `${tooltipY}px`;
+  tooltip.style.visibility = "visible";
+  tooltip.style.zIndex = "1000";
+  // let's close previous tooltip if it is not the same footnote
+  if (lastShownTooltip && lastShownTooltip !== tooltip) {
+    lastShownTooltip.style.display = "none";  
+  }
+  lastShownTooltip = tooltip;
+  });
+
+  footnote.addEventListener("mouseout", () => {
+    setTimeout(() => {
+      if (!tooltip.matches(':hover') && !footnote.matches(':hover')) {
+        tooltip.style.display = "none";
+      }
+    }, 1300);
+  });
+  
+  // Add event listener to the tooltip itself to hide when mouse leaves
+  tooltip.addEventListener("mouseout", () => {
+    setTimeout(() => {
+      if (!tooltip.matches(':hover') && !footnote.matches(':hover')) {
+        tooltip.style.display = "none";
+      }
+    }, 3000);
+  });
+});
+
+  // lets add scroll event to textContent div
+  const textItems = document.querySelectorAll(".textItem");
+
+  let lastVisibleId = null;
+
+  window.addEventListener('scroll', () => {
+    let latestVisibleId = null;
+
+    textItems.forEach(item => {
+      const rect = item.getBoundingClientRect();
+      const middlepoint = window.innerHeight / 2;
+      // if 0 between rect.top and rect.bottom that means
+      // the item is visible in the viewport
+      if( rect.top <= middlepoint && rect.bottom >= middlepoint) {
+        latestVisibleId = item.id;
+      }
+    });
+
+    if (latestVisibleId && latestVisibleId !== lastVisibleId) {
+      lastVisibleId = latestVisibleId;
+      updateInfographic("myInfographic", infoData[latestVisibleId]);
+    }
+  });  
+
+  // Add this script to handle spoiler functionality
+document.addEventListener('DOMContentLoaded', () => {
+  const spoilers = document.querySelectorAll('.spoiler');
+  
+  spoilers.forEach(spoiler => {
+    const header = spoiler.querySelector('.spoiler-header');
+    
+    header.addEventListener('click', () => {
+      spoiler.classList.toggle('active');
+    });
+  });
+});
+/*  drawInfographic("myInfographic", data);
+  //updateInfographic("myInfographic", data2);
+  // lets make the code the once upon 3 seconds update ifographic to data1 and then back to data
+  var currentData = data;
+  setInterval(() => {
+    currentData = currentData === data ? data2 : data;
+    updateInfographic("myInfographic", currentData);
+  }, 3000);
+*/
+</script>
+
+<footer>
+  <div class="footer-content">
+    <p>Icons by <a href="http://https://fontawesome.com/" target="_blank">Font Awesome</a></p>
+    <p>All rights belong to <a href="https://ai-2027.com/" target="_blank">ai-2027.com</a></p>
+    <p>This is a translation and is not linked to the original site in any way.</p>
+  </div>
+</body>
+</html>
