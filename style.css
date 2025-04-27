@@ -401,3 +401,33 @@ sup.translater {
   font-size: 16px;
   width: 45%;
 }
+
+
+.spoiler-multi {
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  margin: 15px 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+}
+.spoiler-multi-content {
+  display: none; 
+  p {
+    margin-bottom: 1rem;
+  }
+}
+.spoiler-multi-content.active { display: block; }
+
+.spoiler-multi-headers {
+  display: ruby;
+}
+.spoiler-multi-header { 
+  background-color: rgba(42, 98, 61, 0.05);
+  padding: 10px 15px;
+  cursor: pointer;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+ }
+.spoiler-multi-header.active { font-weight: bold; /* or any highlight */ }

@@ -30,6 +30,7 @@
   </div>
 </div>
 
+
 <script>
 </script>
 
@@ -331,6 +332,35 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 });
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.spoiler-multi').forEach(spoilermulti => {
+    const headers  = spoilermulti.querySelectorAll('.spoiler-multi-header');
+    const contents = spoilermulti.querySelectorAll('.spoiler-multi-content');
+
+    // Make sure panels match headers
+    if (headers.length !== contents.length) return;
+
+    headers.forEach((header, i) => {
+  header.addEventListener('click', () => {
+    // Check if this header is already active
+    const isCurrentlyActive = header.classList.contains('active');
+    
+    // Clear all active states first
+    headers.forEach(h => h.classList.remove('active'));
+    contents.forEach(c => c.classList.remove('active'));
+    
+    // Only activate this header and content if it wasn't already active
+    if (!isCurrentlyActive) {
+      header.classList.add('active');
+      contents[i].classList.add('active');
+    }
+    // If it was already active, we don't re-add the active classes, effectively closing it
+  });
+});
+
+  });
+});
 /*  drawInfographic("myInfographic", data);
   //updateInfographic("myInfographic", data2);
   // lets make the code the once upon 3 seconds update ifographic to data1 and then back to data
@@ -340,13 +370,14 @@ document.addEventListener('DOMContentLoaded', () => {
     updateInfographic("myInfographic", currentData);
   }, 3000);
 */
-</script>
 
-<footer>
-  <div class="footer-content">
-    <p>Icons by <a href="http://https://fontawesome.com/" target="_blank">Font Awesome</a></p>
-    <p>All rights belong to <a href="https://ai-2027.com/" target="_blank">ai-2027.com</a></p>
-    <p>This is a translation and is not linked to the original site in any way.</p>
-  </div>
+</script>
+<div class="footer-content" style="display:none;">
+  <p>Icons by <a href="http://https://fontawesome.com/" target="_blank">Font Awesome</a></p>
+  <p>All rights belong to <a href="https://ai-2027.com/" target="_blank">ai-2027.com</a></p>
+  <p>This is a translation and is not linked to the original site in any way.</p>
+</div>
+
 </body>
 </html>
+
